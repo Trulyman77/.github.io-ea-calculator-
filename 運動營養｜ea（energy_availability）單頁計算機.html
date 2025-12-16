@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EA（Energy Availability）計算機｜運動營養</title>
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --card: #121821;
+      --muted: #7f8da3;
+      --text: #e8eef7;
+      --accent: #6ee7ff;
+      --accent-2: #8bffb0;
+      --warn: #ffd166;
+      --danger: #ff6b6b;
+      --ok: #9cff7a;
+      --ring: rgba(110, 231, 255, .45);
+      --shadow: 0 10px 25px rgba(0,0,0,.35);
+      --radius: 18px;
+    }
+    html,body{height:100%}
+    body{
+      margin:0; background:linear-gradient(135deg,#0b0f14 0%,#0e1420 50%,#0b0f14 100%);
+      color:var(--text); font:16px/1.6 system-ui, -apple-system, Segoe UI, Roboto, Noto Sans TC, Helvetica, Arial;
+      display:grid; place-items:start center; padding:32px; box-sizing:border-box;
+    }
+    .app{width:min(980px,100%);}
+    .title{display:flex; gap:14px; align-items:center; margin-bottom:16px}
+    .badge{font-weight:600; letter-spacing:.04em; border:1px solid #2b3443; color:var(--muted); padding:6px 10px; border-radius:999px;}
+    h1{margin:.2rem 0 0; font-size:clamp(22px,2.2vw,28px)}
+    .card{background:var(--card); border:1px solid #1d2633; border-radius:var(--radius); box-shadow:var(--shadow);}
+    .grid{display:grid; gap:18px}
+    .twocol{grid-template-columns:1fr 1fr}
+    @media (max-width: 820px){.twocol{grid-template-columns:1fr}}
+    .section{padding:20px}
+    .section + .section{border-top:1px solid #1d2633}
+    .row{display:grid; gap:12px; grid-template-columns:240px 1fr; align-items:center}
+    @media (max-width: 700px){.row{grid-template-columns:1fr}}
+    label{color:var(--muted); font-weight:600}
+    .hint{color:#9aa7be; font-size:.9em}
+    input, select, button, textarea{font:inherit; color:var(--text)}
+    input[type="number"], input[type="text"], select{
+      width:100%; padding:12px 14px; border-radius:12px; background:#0e141d; border:1px solid #243040; outline:none;
+    }
+    input:focus, select:focus, textarea:focus{box-shadow:0 0 0 4px var(--ring)}
+    .subtle{color:var(--muted)}
+    .inline{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+    .divider{height:1px; background:#1d2633; margin:8px 0 12px}
+    .pill{display:inline-flex; align-items:center; gap:8px; border-radius:999px; padding:8px 12px; border:1px solid #243040; background:#0d141e}
+    .pill b{letter-spacing:.02em}
+    .muted{color:#9fb0c9}
+    .kpi{display:grid; gap:12px; grid-template-columns:repeat(3,minmax(0,1fr))}
+    @media (max-width: 820px){.kpi{grid-template-columns:1fr}}
+    .kpi .box{padding:16px; border-radius:14px; border:1px solid #223045; background:#0f1621}
+    .kpi .big{font-size:clamp(22px,3.2vw,28px); font-weight:800}
+    .tag{display:inline-block; padding:.2em .55em; border-radius:8px; font-weight:700}
+    .ok{background:rgba(156,255,122,.12); color:var(--ok); border:1px solid rgba(156,255,122,.35)}
+    .mid{background:rgba(255,209,102,.12); color:var(--warn); border:1px solid rgba(255,209,102,.35)}
+    .low{background:rgba(255,107,107,.12); color:var(--danger); border:1px solid rgba(255,107,107,.35)}
+    details{background:#0e151f; border:1px dashed #2a394f; border-radius:12px; padding:12px 14px}
+    summary{cursor:pointer; color:#cfe7ff; font-weight:700}
+    table{width:100%; border-collapse:collapse}
+    th, td{padding:10px 8px; border-bottom:1px dashed #223045; text-align:left}
+    tfoot td{border-top:1px solid #223045; border-bottom:none; font-weight:800}
+    .actions{display:flex; gap:10px; flex-wrap:wrap}
+    .btn{background:#0e151f; border:1px solid #2a394f; border-radius:12px; padding:10px 14px; cursor:pointer}
+    .btn.primary{background:linear-gradient(135deg,#1a98ff,#00d4ff); border:none; color:#00111a; font-weight:800}
+    .right{display:flex; justify-content:flex-end}
+    .footer{color:#8aa4c4; font-size:.9em}
+    .small{font-size:.92em}
+    .note{padding:12px 14px; border-radius:12px; background:#0f1726; border:1px solid #223045}
+    .flex{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+    .sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="title">
+      <span class="badge">運動營養 • EA 計算</span>
+      <h1>Energy Availability（能量可用性）單頁計算機</h1>
+    </div>
+
+    <section class="card grid">
+      <div class="section grid twocol">
+        <div>
+          <div class="row">
+            <label for="sex">性別（僅用於說明與建議）</label>
+            <select id="sex">
+              <option value="female">女性</option>
+              <option value="male">男性</option>
+              <option value="na">不指定</option>
+            </select>
+          </div>
+          <div class="row">
+            <label>FFM 來源（擇一）<div class="hint">FFM=去脂體重；可直接輸入，或用體重×(1−體脂％)估算</div></label>
+            <div>
+              <div class="inline">
+                <label class="pill"><input type="radio" name="ffmMode" value="calc" checked> 依體重＋體脂率估算</label>
+                <label class="pill"><input type="radio" name="ffmMode" value="direct"> 直接輸入 FFM</label>
+              </div>
+              <div id="ffmCalc">
+                <div class="divider"></div>
+                <div class="grid twocol">
+                  <div>
+                    <label for="weight" class="subtle">體重（kg）</label>
+                    <input id="weight" type="number" min="20" step="0.1" placeholder="例如 60" />
+                  </div>
+                  <div>
+                    <label for="bodyfat" class="subtle">體脂率（%）</label>
+                    <input id="bodyfat" type="number" min="0" max="65" step="0.1" placeholder="例如 18" />
+                  </div>
+                </div>
+              </div>
+              <div id="ffmDirect" style="display:none">
+                <div class="divider"></div>
+                <label for="ffm" class="subtle">FFM 去脂體重（kg）</label>
+                <input id="ffm" type="number" min="20" step="0.1" placeholder="例如 49.2" />
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <label for="ei">能量攝取 EI（kcal/天）</label>
+            <input id="ei" type="number" min="0" step="1" placeholder="例如 2400" />
+          </div>
+          <div class="row">
+            <label for="eee">運動能量消耗 EEE（kcal/天）</label>
+            <div>
+              <input id="eee" type="number" min="0" step="1" placeholder="例如 600" />
+              <div class="hint small">若不確定，可展開下方估算器由活動強度（MET）與時間估算 EEE。</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="kpi">
+            <div class="box">
+              <div class="muted small">公式</div>
+              <div class="big">EA = (EI − EEE) ÷ FFM</div>
+              <div class="small muted">單位：kcal / kg FFM / day</div>
+            </div>
+            <div class="box">
+              <div class="muted small">計算結果</div>
+              <div class="big" id="eaValue">—</div>
+              <div class="small"><span id="eaClass" class="tag mid">—</span></div>
+            </div>
+            <div class="box">
+              <div class="muted small">FFM（估算或輸入）</div>
+              <div class="big" id="ffmPreview">—</div>
+              <div class="small muted" id="ffmNote">未提供體重/體脂或 FFM</div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="note small" id="advice">請輸入數據以取得建議。</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <details>
+          <summary>展開：用 MET × 時間 估算每日 EEE</summary>
+          <div class="hint" style="margin:8px 0 14px">公式：kcal ≈ MET × 3.5 × 體重(kg) ÷ 200 × 分鐘；請加入同一天內的所有運動。</div>
+          <div class="actions" style="margin-bottom:10px">
+            <button class="btn" id="addAct">＋新增活動</button>
+            <button class="btn" id="clearAct">清空</button>
+          </div>
+          <div class="tableWrap">
+            <table id="actTable" aria-label="活動列表">
+              <thead>
+                <tr><th>#</th><th>活動</th><th>MET</th><th>分鐘</th><th>體重(kg)</th><th>估算消耗 (kcal)</th><th></th></tr>
+              </thead>
+              <tbody></tbody>
+              <tfoot>
+                <tr><td colspan="5" class="right">合計</td><td id="eeeSum">0</td><td></td></tr>
+              </tfoot>
+            </table>
+          </div>
+          <div class="actions" style="margin-top:12px">
+            <button class="btn primary" id="applyEEE">套用合計到 EEE 欄位</button>
+          </div>
+        </details>
+      </div>
+
+      <div class="section grid twocol">
+        <div>
+          <div class="inline">
+            <span class="pill"><b>建議區間</b>：<span class="muted">最佳 ≳ 45</span></span>
+            <span class="pill"><b>注意</b>：<span class="muted">30–45（可能不足）</span></span>
+            <span class="pill"><b>風險</b>：<span class="muted">＜ 30（RED-S 風險高）</span></span>
+          </div>
+          <p class="small muted" style="margin-top:8px">註：區間依運動營養文獻常用門檻；個體差異存在，請搭配專業評估。</p>
+        </div>
+        <div class="actions right">
+          <button class="btn" id="demoF">載入範例：女性 48kg</button>
+          <button class="btn" id="demoM">載入範例：男性 60kg</button>
+          <button class="btn" id="reset">重設</button>
+          <button class="btn primary" id="calc">立即計算</button>
+        </div>
+      </div>
+
+      <div class="section footer">
+        <div class="small">
+          本工具僅作教育用途，非醫療診斷；若疑似低能量可用性（LEA）或 RED‑S，請諮詢合格運動營養師 / 醫師。
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Utility helpers
+    const $ = (sel, el=document) => el.querySelector(sel);
+    const $$ = (sel, el=document) => [...el.querySelectorAll(sel)];
+    const clamp = (n,min,max)=>Math.min(Math.max(n,min),max);
+
+    // Elements
+    const sexEl = $('#sex');
+    const ffmModeEls = $$('input[name="ffmMode"]');
+    const ffmCalcBox = $('#ffmCalc');
+    const ffmDirectBox = $('#ffmDirect');
+    const weightEl = $('#weight');
+    const bodyfatEl = $('#bodyfat');
+    const ffmEl = $('#ffm');
+    const eiEl = $('#ei');
+    const eeeEl = $('#eee');
+    const eaValueEl = $('#eaValue');
+    const eaClassEl = $('#eaClass');
+    const ffmPreviewEl = $('#ffmPreview');
+    const ffmNoteEl = $('#ffmNote');
+    const adviceEl = $('#advice');
+
+    // Activity table for EEE estimation
+    const actTableBody = $('#actTable tbody');
+    const eeeSumEl = $('#eeeSum');
+
+    // Switch FFM input mode
+    ffmModeEls.forEach(r => r.addEventListener('change', () => {
+      const mode = $('input[name="ffmMode"]:checked').value;
+      ffmCalcBox.style.display = mode === 'calc' ? '' : 'none';
+      ffmDirectBox.style.display = mode === 'direct' ? '' : 'none';
+      updateFFMPreview();
+    }));
+
+    // Calculate FFM based on mode
+    function getFFM(){
+      const mode = $('input[name="ffmMode"]:checked').value;
+      if(mode === 'direct'){
+        const v = parseFloat(ffmEl.value);
+        return Number.isFinite(v) && v>0 ? v : null;
+      } else {
+        const w = parseFloat(weightEl.value);
+        const bf = parseFloat(bodyfatEl.value);
+        if(Number.isFinite(w) && w>0 && Number.isFinite(bf) && bf>=0 && bf<70){
+          return w * (1 - bf/100);
+        }
+        return null;
+      }
+    }
+
+    function classifyEA(ea){
+      if(!Number.isFinite(ea)) return {label:'—', cls:'mid'};
+      if(ea < 30) return {label:'低（<30）', cls:'low'};
+      if(ea < 45) return {label:'注意（30–45）', cls:'mid'};
+      return {label:'最佳（≥45）', cls:'ok'};
+    }
+
+    function fmt(x, digits=1){
+      return Number.isFinite(x) ? x.toFixed(digits) : '—';
+    }
+
+    function updateFFMPreview(){
+      const ffm = getFFM();
+      ffmPreviewEl.textContent = fmt(ffm, 1) + (Number.isFinite(ffm) ? ' kg' : '');
+      ffmNoteEl.textContent = Number.isFinite(ffm)
+        ? 'FFM 為去脂體重（含骨骼肌、器官、骨骼與體水份等）'
+        : '未提供足夠資訊以估算 FFM';
+    }
+
+    [weightEl, bodyfatEl, ffmEl].forEach(el => el.addEventListener('input', updateFFMPreview));
+
+    function calcEA(){
+      const ffm = getFFM();
+      const ei = parseFloat(eiEl.value);
+      const eee = parseFloat(eeeEl.value);
+      if(!Number.isFinite(ffm) || ffm<=0){
+        eaValueEl.textContent = '—';
+        eaClassEl.textContent = '請先提供 FFM（去脂體重）';
+        eaClassEl.className = 'tag mid';
+        adviceEl.textContent = '提示：可直接輸入 FFM，或提供「體重」與「體脂率」讓系統估算。';
+        return;
+      }
+      if(!Number.isFinite(ei) || !Number.isFinite(eee)){
+        eaValueEl.textContent = '—';
+        eaClassEl.textContent = '請輸入 EI 與 EEE';
+        eaClassEl.className = 'tag mid';
+        adviceEl.textContent = 'EI=能量攝取；EEE=運動能量消耗。兩者皆以「每天」為基準。';
+        return;
+      }
+      const ea = (ei - eee) / ffm; // kcal/kg FFM/day
+      eaValueEl.textContent = fmt(ea, 1) + ' kcal/kg/日';
+      const klass = classifyEA(ea);
+      eaClassEl.textContent = klass.label;
+      eaClassEl.className = 'tag ' + klass.cls;
+
+      // Contextual advice
+      let msg = '';
+      const sex = sexEl.value;
+      if(ea < 30){
+        msg = '⚠️ 目前 EA 低於 30，疑似低能量可用性（LEA）區間，RED‑S 風險高。建議：增加 EI、降低 EEE、或兩者並行，並與運動營養師/醫師討論。';
+      } else if(ea < 45){
+        msg = '🟡 EA 介於 30–45，可能不足；建議微幅提高 EI 或週期化訓練負荷，觀察生理與表現指標（體重、月經/睪固酮、HRV、疲勞度等）。';
+      } else {
+        msg = '🟢 EA ≥ 45，多數耐力項目視為較佳區間；仍建議依訓練週期動態調整，避免長期偏低。';
+      }
+      if(sex === 'female') msg += ' 女性長期 LEA 可能影響月經週期與骨健康，請特別留意。';
+      if(sex === 'male') msg += ' 男性也可能出現 LEA/RED‑S（睪固酮下降、骨密度受影響），請留意。';
+      adviceEl.textContent = msg;
+    }
+
+    $('#calc').addEventListener('click', calcEA);
+    $('#reset').addEventListener('click', () => { [weightEl, bodyfatEl, ffmEl, eiEl, eeeEl].forEach(el => el.value=''); updateFFMPreview(); eaValueEl.textContent='—'; eaClassEl.textContent='—'; eaClassEl.className='tag mid'; adviceEl.textContent='請輸入數據以取得建議。'; });
+
+    // Demos (aligned with user's frequent examples)
+    $('#demoF').addEventListener('click', ()=>{
+      sexEl.value='female';
+      $('input[name="ffmMode"][value="calc"]').checked = true; ffmCalcBox.style.display=''; ffmDirectBox.style.display='none';
+      weightEl.value = 48; bodyfatEl.value = 22; // 假設範例
+      eiEl.value = 2200; eeeEl.value = 450;
+      updateFFMPreview(); calcEA();
+    });
+    $('#demoM').addEventListener('click', ()=>{
+      sexEl.value='male';
+      $('input[name="ffmMode"][value="calc"]').checked = true; ffmCalcBox.style.display=''; ffmDirectBox.style.display='none';
+      weightEl.value = 60; bodyfatEl.value = 15; // 假設範例
+      eiEl.value = 2600; eeeEl.value = 800;
+      updateFFMPreview(); calcEA();
+    });
+
+    // Activity rows logic
+    let actIdx = 0;
+    function addActRow({name='', met='', mins='', w='' }={}){
+      const tr = document.createElement('tr');
+      const idx = ++actIdx;
+      tr.innerHTML = `
+        <td>${idx}</td>
+        <td><input type="text" placeholder="例如：配速跑" value="${name}"></td>
+        <td><input type="number" min="1" step="0.1" placeholder="如 10" value="${met}"></td>
+        <td><input type="number" min="1" step="1" placeholder="分鐘" value="${mins}"></td>
+        <td><input type="number" min="20" step="0.1" placeholder="體重" value="${w || weightEl.value}"></td>
+        <td class="kcal">0</td>
+        <td><button class="btn" aria-label="刪除">刪除</button></td>
+      `;
+      actTableBody.appendChild(tr);
+      const [nameIn, metIn, minIn, wIn] = $$('input', tr);
+      const kcalCell = $('.kcal', tr);
+      const delBtn = $('button', tr);
+
+      function recalc(){
+        const met = parseFloat(metIn.value);
+        const mins = parseFloat(minIn.value);
+        const w = parseFloat(wIn.value);
+        let kcal = 0;
+        if([met, mins, w].every(v => Number.isFinite(v) && v>0)){
+          kcal = met * 3.5 * w / 200 * mins;
+        }
+        kcalCell.textContent = Math.round(kcal);
+        sumEEE();
+      }
+      [metIn, minIn, wIn].forEach(el => el.addEventListener('input', recalc));
+      delBtn.addEventListener('click', ()=>{ tr.remove(); sumEEE(); });
+      recalc();
+    }
+
+    function sumEEE(){
+      const total = $$('#actTable tbody tr').reduce((acc, tr)=>acc + (parseFloat($('.kcal', tr).textContent) || 0), 0);
+      eeeSumEl.textContent = Math.round(total);
+    }
+
+    $('#addAct').addEventListener('click', ()=> addActRow());
+    $('#clearAct').addEventListener('click', ()=>{ actTableBody.innerHTML=''; eeeSumEl.textContent='0'; });
+    $('#applyEEE').addEventListener('click', ()=>{ eeeEl.value = eeeSumEl.textContent; });
+
+    // Initialize
+    updateFFMPreview();
+  </script>
+</body>
+</html>
